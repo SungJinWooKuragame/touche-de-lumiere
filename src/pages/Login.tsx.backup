@@ -135,8 +135,8 @@ export default function Login() {
     if (!resetEmail) {
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Email é obrigatório",
+        title: t("auth.error"),
+        description: t("auth.emailRequired"),
       });
       return;
     }
@@ -150,13 +150,13 @@ export default function Login() {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Erro",
+        title: t("auth.error"),
         description: error.message,
       });
     } else {
       toast({
-        title: "Email de recuperação enviado!",
-        description: "Verifique sua caixa de entrada para redefinir sua senha",
+        title: t("auth.resetEmailSent"),
+        description: t("auth.checkEmailForReset"),
       });
       setForgotPasswordMode(false);
       setResetEmail("");
@@ -175,7 +175,7 @@ export default function Login() {
       if (error instanceof z.ZodError) {
         toast({
           variant: "destructive",
-          title: "Erro de validação",
+          title: t("auth.validationError"),
           description: error.errors[0].message,
         });
         return;
@@ -191,15 +191,15 @@ export default function Login() {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao fazer login",
+        title: t("auth.loginError"),
         description: error.message === "Invalid login credentials" 
-          ? "Email ou senha incorretos"
+          ? t("auth.invalidCredentials")
           : error.message,
       });
     } else {
       toast({
-        title: "Login realizado!",
-        description: "Bem-vindo de volta",
+        title: t("auth.loginSuccess"),
+        description: t("auth.welcomeBack"),
       });
       navigate("/");
     }
@@ -224,7 +224,7 @@ export default function Login() {
         if (error instanceof z.ZodError) {
           toast({
             variant: "destructive",
-            title: "Erro de validação",
+            title: t("auth.validationError"),
             description: error.errors[0].message,
           });
           return;
@@ -236,8 +236,8 @@ export default function Login() {
     if (signupPassword !== confirmPassword) {
       toast({
         variant: "destructive",
-        title: "Erro de validação",
-        description: "As senhas não coincidem",
+        title: t("auth.validationError"),
+        description: t("auth.passwordsDoNotMatch"),
       });
       return;
     }
@@ -254,8 +254,8 @@ export default function Login() {
     if (existingPhone) {
       toast({
         variant: "destructive",
-        title: "Telefone já cadastrado",
-        description: "Este número já está sendo usado por outra conta",
+        title: t("auth.phoneAlreadyExists"),
+        description: t("auth.useAnotherPhone"),
       });
       setIsLoading(false);
       return;
@@ -276,15 +276,15 @@ export default function Login() {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar conta",
+        title: t("auth.signupError"),
         description: error.message === "User already registered" 
-          ? "Este email já está cadastrado"
+          ? t("auth.emailAlreadyExists")
           : error.message,
       });
     } else {
       toast({
-        title: "Conta criada com sucesso!",
-        description: "Você já pode fazer login",
+        title: t("auth.accountCreated"),
+        description: t("auth.canNowLogin"),
       });
       navigate("/");
     }
@@ -293,74 +293,14 @@ export default function Login() {
 
   const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
 
-  if (forgotPasswordMode) {
-    return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-glow">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <img 
-                src="/beautiful-lotus.svg" 
-                alt="Logo" 
-                className="w-12 h-12"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-              <Sparkles className="w-12 h-12 text-primary hidden" />
-            </div>
-            <CardTitle className="text-3xl">Esqueci minha senha</CardTitle>
-            <CardDescription>Digite seu email para receber um link de recuperação</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="reset-email">Email</Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isResetting}>
-                {isResetting ? "Enviando..." : "Enviar link de recuperação"}
-              </Button>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                className="w-full" 
-                onClick={() => setForgotPasswordMode(false)}
-              >
-                Voltar ao login
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-glow">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img 
-              src="/beautiful-lotus.svg" 
-              alt="Logo" 
-              className="w-12 h-12"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            <Sparkles className="w-12 h-12 text-primary hidden" />
+            <Sparkles className="w-12 h-12 text-primary" />
           </div>
-          <CardTitle className="text-3xl">Touche de Lumière</CardTitle>
+          <CardTitle className="text-3xl">Terapias Holísticas</CardTitle>
           <CardDescription>Acesse sua conta ou crie uma nova</CardDescription>
         </CardHeader>
         <CardContent>
@@ -385,35 +325,16 @@ export default function Login() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Senha</Label>
-                  <div className="relative">
-                    <Input
-                      id="login-password"
-                      type={showPassword ? "text" : "password"}
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Entrando..." : "Entrar"}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="link" 
-                  className="w-full text-sm" 
-                  onClick={() => setForgotPasswordMode(true)}
-                >
-                  Esqueci minha senha
                 </Button>
               </form>
             </TabsContent>
@@ -433,99 +354,35 @@ export default function Login() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={signupEmail}
-                      onChange={handleEmailChange}
-                      required
-                    />
-                    {emailValid !== null && (
-                      <div className="absolute right-2 top-2">
-                        {emailValid ? 
-                          <CheckCircle className="h-5 w-5 text-green-500" /> : 
-                          <XCircle className="h-5 w-5 text-red-500" />
-                        }
-                      </div>
-                    )}
-                  </div>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-phone">Telefone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-2 top-2 h-5 w-5 text-gray-400" />
-                    <Input
-                      id="signup-phone"
-                      type="tel"
-                      placeholder="+33 6 80 53 73 29"
-                      value={signupPhone}
-                      onChange={handlePhoneChange}
-                      className="pl-10"
-                      required
-                    />
-                    {phoneValid !== null && (
-                      <div className="absolute right-2 top-2">
-                        {phoneValid ? 
-                          <CheckCircle className="h-5 w-5 text-green-500" /> : 
-                          <XCircle className="h-5 w-5 text-red-500" />
-                        }
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-600">Inclua o código do país com + (ex: +33 para França)</p>
+                  <Input
+                    id="signup-phone"
+                    type="tel"
+                    placeholder="(00) 00000-0000"
+                    value={signupPhone}
+                    onChange={(e) => setSignupPhone(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Senha</Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? "text" : "password"}
-                      value={signupPassword}
-                      onChange={handlePasswordChange}
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-8 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                    {passwordValid !== null && (
-                      <div className="absolute right-2 top-2">
-                        {passwordValid ? 
-                          <CheckCircle className="h-5 w-5 text-green-500" /> : 
-                          <XCircle className="h-5 w-5 text-red-500" />
-                        }
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-600">Mín. 8 caracteres, 1 maiúscula, 1 minúscula e 1 número</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirm-password"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-2 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    required
+                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Criando conta..." : "Criar Conta"}
