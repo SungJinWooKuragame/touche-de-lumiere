@@ -115,6 +115,9 @@ export default function Admin() {
 
   // Função para limpar todos os agendamentos (APENAS PARA TESTES)
   const clearAllAppointments = async () => {
+    const pendingCount = appointments.filter(a => a.status === "pending").length;
+    const confirmedCount = appointments.filter(a => a.status === "confirmed").length;
+    
     const confirmed = confirm(`⚠️ ATENÇÃO: OPERAÇÃO DESTRUTIVA! ⚠️
 
 Isso vai DELETAR PERMANENTEMENTE todos os agendamentos:
