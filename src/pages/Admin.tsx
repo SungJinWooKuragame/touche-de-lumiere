@@ -19,6 +19,90 @@ import { useToast } from "@/hooks/use-toast";
 import { GoogleCalendarAPI } from "@/lib/google-calendar-api";
 import { useTranslation } from "react-i18next";
 
+// Função para enviar notificações por email
+const sendNotificationEmail = async (to: string, type: string, data: any) => {
+  try {
+    const { data: result, error } = await supabase.functions.invoke('send-notification-email', {
+      body: { to, type, data }
+    });
+
+    if (error) throw error;
+    
+    console.log(`📧 Email ${type} enviado para ${to}:`, result);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error(`❌ Erro ao enviar email ${type}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Função para enviar notificações por WhatsApp
+const sendWhatsAppNotification = async (to: string, type: string, data: any) => {
+  try {
+    // Verificar se o telefone tem formato válido
+    if (!to || !to.startsWith('+')) {
+      console.log('⚠️ Telefone inválido para WhatsApp:', to);
+      return { success: false, error: 'Telefone inválido' };
+    }
+
+    const { data: result, error } = await supabase.functions.invoke('send-whatsapp', {
+      body: { to, type, data }
+    });
+
+    if (error) throw error;
+    
+    console.log(`📱 WhatsApp ${type} enviado para ${to}:`, result);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error(`❌ Erro ao enviar WhatsApp ${type}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Função para enviar todas as notificações
+const sendAllNotifications = async (appointment: any, type: 'appointment_confirmation' | 'appointment_cancellation' | 'appointment_reminder', cancellationReason?: string) => {
+  const notifications = [];
+  
+  const notificationData = {
+    clientName: appointment.profiles?.full_name || 'Cliente',
+    serviceName: appointment.services?.name || 'Serviço',
+    appointmentDate: appointment.appointment_date,
+    appointmentTime: appointment.appointment_time,
+    cancellationReason,
+    ownerPhone: '+55 (44) 99999-9999', // Substitua pelo seu telefone
+    appointmentId: appointment.id
+  };
+
+  // Enviar email se disponível
+  if (appointment.profiles?.email) {
+    notifications.push(
+      sendNotificationEmail(appointment.profiles.email, type, notificationData)
+        .then(result => ({ channel: 'email', ...result }))
+    );
+  }
+
+  // Enviar WhatsApp se disponível e válido
+  if (appointment.profiles?.phone) {
+    notifications.push(
+      sendWhatsAppNotification(appointment.profiles.phone, type, notificationData)
+        .then(result => ({ channel: 'whatsapp', ...result }))
+    );
+  }
+
+  const results = await Promise.all(notifications);
+  
+  const successCount = results.filter(r => r.success).length;
+  const totalCount = results.length;
+  
+  console.log(`📊 Notificações enviadas: ${successCount}/${totalCount}`, results);
+  
+  return {
+    total: totalCount,
+    successful: successCount,
+    results
+  };
+};
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -958,6 +1042,19 @@ Deseja continuar?`);
     setIsLoading(true);
     
     try {
+      // Buscar dados completos do agendamento ANTES de confirmar
+      const { data: appointment, error: fetchError } = await supabase
+        .from("appointments")
+        .select(`
+          *,
+          profiles:client_id (full_name, email, phone),
+          services (name, duration_minutes, description, price)
+        `)
+        .eq("id", aptId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       // Confirmar agendamento
       const { error } = await supabase
         .from("appointments")
@@ -965,6 +1062,16 @@ Deseja continuar?`);
         .eq("id", aptId);
 
       if (error) throw error;
+
+      // 📧📱 ENVIAR NOTIFICAÇÕES DE CONFIRMAÇÃO
+      console.log('📢 Enviando notificações de confirmação...');
+      const notificationResults = await sendAllNotifications(appointment, 'appointment_confirmation');
+      
+      if (notificationResults.successful > 0) {
+        console.log(`✅ ${notificationResults.successful}/${notificationResults.total} notificações enviadas com sucesso!`);
+      } else {
+        console.log('⚠️ Nenhuma notificação foi enviada (possível problema de configuração)');
+      }
 
       // Se conectado, criar evento REAL no Google Calendar
       if (googleCalendarSettings.connected) {
@@ -1052,7 +1159,7 @@ Deseja continuar?`);
 
               toast({
                 title: "🎉 SUCESSO TOTAL!",
-                description: `Agendamento confirmado E evento criado no Google Calendar de ${googleCalendarSettings.email}! Link: ${result.eventLink}`,
+                description: `Agendamento confirmado, evento criado no Google Calendar e ${notificationResults.successful} notificação(ões) enviada(s)!`,
                 duration: 8000,
               });
 
@@ -1080,13 +1187,13 @@ Deseja continuar?`);
               
               toast({
                 title: "✅ Agendamento Confirmado",
-                description: "Agendamento confirmado! Token do Google Calendar removido (estava inválido). Reconecte para sincronizar.",
+                description: `Agendamento confirmado e ${notificationResults.successful} notificação(ões) enviada(s)! Token do Google Calendar removido (estava inválido). Reconecte para sincronizar.`,
                 variant: "default"
               });
             } else {
               toast({
                 title: "✅ Agendamento Confirmado",
-                description: `Agendamento confirmado com sucesso! Erro no Google Calendar: ${calendarError.message}`,
+                description: `Agendamento confirmado e ${notificationResults.successful} notificação(ões) enviada(s)! Erro no Google Calendar: ${calendarError.message}`,
                 variant: "default"
               });
             }
@@ -1095,13 +1202,13 @@ Deseja continuar?`);
         } else {
           toast({
             title: t('admin.confirmedSuccess'),
-            description: "Agendamento confirmado! (Dados do evento não encontrados)",
+            description: `Agendamento confirmado e ${notificationResults.successful} notificação(ões) enviada(s)! (Dados do evento não encontrados)`,
           });
         }
       } else {
         toast({
           title: t('admin.confirmedSuccess'),
-          description: "Agendamento confirmado! Para sincronizar com Google Calendar, conecte na aba correspondente.",
+          description: `Agendamento confirmado e ${notificationResults.successful} notificação(ões) enviada(s)! Para sincronizar com Google Calendar, conecte na aba correspondente.`,
         });
       }
 
@@ -1121,13 +1228,13 @@ Deseja continuar?`);
     setIsLoading(true);
     
     try {
-      // Buscar o agendamento para pegar as informações do Google Calendar
+      // Buscar o agendamento para pegar as informações completas
       const { data: appointment, error: fetchError } = await supabase
         .from("appointments")
         .select(`
           *,
-          profiles (full_name, email),
-          services (name)
+          profiles (full_name, email, phone),
+          services (name, duration_minutes, price)
         `)
         .eq("id", aptId)
         .single();
@@ -1141,6 +1248,15 @@ Deseja continuar?`);
         .eq("id", aptId);
 
       if (error) throw error;
+
+      // 📧📱 ENVIAR NOTIFICAÇÕES DE CANCELAMENTO
+      console.log('📢 Enviando notificações de cancelamento...');
+      const cancellationReason = "Cancelamento realizado pela clínica"; // Você pode personalizar isso
+      const notificationResults = await sendAllNotifications(appointment, 'appointment_cancellation', cancellationReason);
+      
+      if (notificationResults.successful > 0) {
+        console.log(`✅ ${notificationResults.successful}/${notificationResults.total} notificações de cancelamento enviadas!`);
+      }
 
       // Tentar remover do Google Calendar se o evento existe
       if (appointment.notes && appointment.notes.includes('[Google Calendar Event ID:')) {
@@ -1162,14 +1278,14 @@ Deseja continuar?`);
                 
                 toast({
                   title: "❌ Agendamento Cancelado",
-                  description: "Agendamento cancelado e removido do Google Calendar!",
+                  description: `Agendamento cancelado, removido do Google Calendar e ${notificationResults.successful} notificação(ões) enviada(s)!`,
                 });
               }
             } else {
               console.log('⚠️ Sem credenciais do Google - evento não removido do calendário');
               toast({
                 title: "❌ Agendamento Cancelado",
-                description: "Agendamento cancelado (sem remoção do Google Calendar - reconecte se necessário)",
+                description: `Agendamento cancelado e ${notificationResults.successful} notificação(ões) enviada(s)! (sem remoção do Google Calendar - reconecte se necessário)`,
               });
             }
           }
@@ -1177,13 +1293,13 @@ Deseja continuar?`);
           console.error('❌ Erro ao remover do Google Calendar:', calendarError);
           toast({
             title: "❌ Agendamento Cancelado",
-            description: "Agendamento cancelado (erro ao remover do Google Calendar)",
+            description: `Agendamento cancelado e ${notificationResults.successful} notificação(ões) enviada(s)! (erro ao remover do Google Calendar)`,
           });
         }
       } else {
         toast({
           title: "❌ Agendamento Cancelado",
-          description: "Agendamento cancelado com sucesso!",
+          description: `Agendamento cancelado com sucesso e ${notificationResults.successful} notificação(ões) enviada(s)!`,
         });
       }
 

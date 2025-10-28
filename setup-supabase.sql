@@ -336,5 +336,77 @@ INSERT INTO public.operating_hours (day_of_week, start_time, end_time, is_enable
 ON CONFLICT (day_of_week) DO NOTHING;
 
 -- ====================================
+-- SISTEMA DE NOTIFICAÇÕES AUTOMÁTICAS
+-- ====================================
+
+-- Função para enviar notificações quando agendamento é confirmado
+CREATE OR REPLACE FUNCTION public.send_appointment_notifications()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Só enviar notificações quando status mudar para 'confirmed' ou 'cancelled'
+  IF OLD.status IS DISTINCT FROM NEW.status THEN
+    
+    -- Para agendamentos confirmados
+    IF NEW.status = 'confirmed' AND OLD.status != 'confirmed' THEN
+      -- Buscar dados do cliente e serviço
+      PERFORM pg_notify('appointment_confirmed', json_build_object(
+        'appointment_id', NEW.id,
+        'client_id', NEW.client_id,
+        'service_id', NEW.service_id,
+        'appointment_date', NEW.appointment_date,
+        'appointment_time', NEW.appointment_time,
+        'status', NEW.status
+      )::text);
+    END IF;
+    
+    -- Para agendamentos cancelados
+    IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
+      PERFORM pg_notify('appointment_cancelled', json_build_object(
+        'appointment_id', NEW.id,
+        'client_id', NEW.client_id,
+        'service_id', NEW.service_id,
+        'appointment_date', NEW.appointment_date,
+        'appointment_time', NEW.appointment_time,
+        'status', NEW.status,
+        'cancellation_reason', NEW.cancellation_reason
+      )::text);
+    END IF;
+    
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger para enviar notificações automáticas
+DROP TRIGGER IF EXISTS trigger_appointment_notifications ON public.appointments;
+CREATE TRIGGER trigger_appointment_notifications
+  AFTER UPDATE ON public.appointments
+  FOR EACH ROW
+  EXECUTE FUNCTION public.send_appointment_notifications();
+
+-- Função para recuperação de senha personalizada
+CREATE OR REPLACE FUNCTION public.custom_reset_password_notification()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Notificar sistema sobre solicitação de reset de senha
+  PERFORM pg_notify('password_reset_requested', json_build_object(
+    'user_id', NEW.id,
+    'email', NEW.email,
+    'requested_at', NOW()
+  )::text);
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Comentário informativo sobre notificações
+COMMENT ON FUNCTION public.send_appointment_notifications() IS 
+'Função que envia notificações automáticas quando agendamentos são confirmados ou cancelados. Use com Edge Functions para enviar emails/WhatsApp.';
+
+COMMENT ON FUNCTION public.custom_reset_password_notification() IS 
+'Função para customizar notificações de recuperação de senha. Pode ser integrada com Edge Functions.';
+
+-- ====================================
 -- SCRIPT CONCLUÍDO COM SUCESSO! ✅
 -- ====================================
