@@ -1,0 +1,4 @@
+project_id = "leuihzphwmtlhikteurn"
+
+[functions.send-cancellation-email]
+verify_jwt = false
