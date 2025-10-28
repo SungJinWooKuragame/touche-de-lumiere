@@ -1,73 +1,174 @@
-# Welcome to your Lovable project
+# 🌸 Touche de Lumière - Sistema de Agendamento para Terapias
 
-## Project info
+Uma plataforma moderna e elegante para agendamento de sessões de terapia, desenvolvida com React, TypeScript e Supabase.
 
-**URL**: https://lovable.dev/projects/c09dfea7-6357-4649-8415-19ad93935da0
+## ✨ Características Principais
 
-## How can I edit this code?
+- 🎨 **Design Moderno**: Interface limpa com gradientes suaves e animações elegantes
+- 🪷 **Logo Personalizada**: Linda flor de lótus SVG simbolizando renovação e bem-estar
+- 🌐 **Multilíngue**: Suporte para Português, Inglês e Francês
+- 📱 **Responsivo**: Funciona perfeitamente em desktop e mobile
+- 🔐 **Autenticação Segura**: Sistema completo com Supabase Auth
+- 📅 **Integração Google Calendar**: Sincronização automática de agendamentos
+- 💰 **Gestão Financeira**: Dashboard com métricas de receita por cliente
+- 📧 **Email Automático**: Notificações de cancelamento de consultas
+- ⏰ **Horários de Funcionamento**: Sistema inteligente de disponibilidade
+- 🎯 **Organização por Cliente**: Agendamentos agrupados em pastas expansíveis
 
-There are several ways of editing your application.
+## 🛠️ Tecnologias Utilizadas
 
-**Use Lovable**
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + Shadcn/UI
+- **Backend**: Supabase (PostgreSQL + Auth + Edge Functions)
+- **Integração**: Google Calendar API
+- **Ícones**: Lucide React
+- **Animações**: CSS Transitions + Transforms
+- **Deploy**: Netlify (configuração automática)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c09dfea7-6357-4649-8415-19ad93935da0) and start prompting.
+## 🚀 Configuração e Deploy
 
-Changes made via Lovable will be committed automatically to this repo.
+### Pré-requisitos
+- Node.js 18+
+- Conta no Supabase
+- Conta no Google Cloud (para Calendar API)
 
-**Use your preferred IDE**
+### Instalação Local
+```bash
+# Clone o repositório
+git clone https://github.com/SungJinWooKuragame/touche-de-lumiere.git
+cd touche-de-lumiere
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# Instale as dependências
+npm install
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+# Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o arquivo .env com suas chaves
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Execute o projeto
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Deploy Automático no Netlify
+1. Conecte este repositório ao Netlify
+2. Configure as variáveis de ambiente no painel do Netlify
+3. O deploy acontece automaticamente a cada push na branch `main`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📁 Estrutura do Projeto
 
-**Use GitHub Codespaces**
+```
+src/
+├── components/
+│   ├── ui/              # Componentes reutilizáveis (Shadcn/UI)
+│   ├── Navbar.tsx       # Navegação principal
+│   └── ThemeToggle.tsx  # Alternador de tema
+├── pages/
+│   ├── Index.tsx        # Página inicial
+│   ├── Agendar.tsx      # Sistema de agendamento
+│   ├── Admin.tsx        # Painel administrativo
+│   └── Login.tsx        # Autenticação
+├── integrations/
+│   └── supabase/        # Configuração do banco
+└── i18n/               # Arquivos de tradução
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🎨 Design System
 
-## What technologies are used for this project?
+### Cores Principais
+- **Primary**: Gradientes roxo/rosa para elementos principais
+- **Secondary**: Tons complementares para acentos
+- **Background**: Branco/cinza claro com blur backdrop
 
-This project is built with:
+### Tipografia
+- **Headings**: Inter Bold com gradientes
+- **Body**: Inter Regular
+- **UI Elements**: Inter Medium
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Componentes
+- Botões com hover effects e transitions
+- Cards com shadow soft e border radius
+- Inputs com focus states elegantes
+- Modais com backdrop blur
 
-## How can I deploy this project?
+## 💾 Banco de Dados
 
-Simply open [Lovable](https://lovable.dev/projects/c09dfea7-6357-4649-8415-19ad93935da0) and click on Share -> Publish.
+### Tabelas Principais
+- `profiles` - Perfis de usuários
+- `user_roles` - Níveis de acesso (owner/user)
+- `services` - Tipos de terapia oferecidos
+- `appointments` - Agendamentos realizados
+- `operating_hours` - Horários de funcionamento
+- `google_calendar_settings` - Configurações de integração
 
-## Can I connect a custom domain to my Lovable project?
+### Funcionalidades do Supabase
+- Row Level Security (RLS) habilitada
+- Triggers para atualizações automáticas
+- Edge Functions para integrações externas
+- Real-time subscriptions para updates
 
-Yes, you can!
+## 🔗 Integrações
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Google Calendar API
+- Criação automática de eventos
+- Sincronização bidirecional
+- OAuth 2.0 seguro
+- Gestão de conflitos de horários
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Sistema de Email
+- Templates personalizados
+- Notificações de cancelamento
+- Confirmações de agendamento
+- Lembretes automáticos
+
+## 📈 Métricas e Analytics
+
+- Dashboard financeiro por cliente
+- Relatórios de receita mensal
+- Acompanhamento de agendamentos
+- Estatísticas de cancelamentos
+
+## 🔒 Segurança
+
+- Autenticação JWT via Supabase
+- Proteção de rotas sensíveis
+- Validação de dados no frontend/backend
+- Rate limiting em APIs
+- HTTPS obrigatório
+
+## 🌍 Deploy e Monitoramento
+
+### Netlify Configuration
+- Build automático via Git push
+- Preview deployments para PRs
+- Custom domain support
+- SSL automático
+- Performance monitoring
+
+### Variáveis de Ambiente Necessárias
+```
+VITE_SUPABASE_URL=sua_url_supabase
+VITE_SUPABASE_ANON_KEY=sua_key_anonima
+GOOGLE_CALENDAR_API_KEY=sua_api_key_google
+```
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 📞 Suporte
+
+Para dúvidas ou suporte, entre em contato:
+- Email: leonardomanuelmoreiradasilva@gmail.com
+- GitHub: [@SungJinWooKuragame](https://github.com/SungJinWooKuragame)
+
+---
+
+Desenvolvido com 💜 por Leonardo Silva
