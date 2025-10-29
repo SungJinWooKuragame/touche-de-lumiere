@@ -73,6 +73,22 @@ export default function Index() {
     }
   };
 
+  // Função para obter texto traduzido do serviço
+  const getServiceText = (service: any, field: 'name' | 'description') => {
+    const currentLang = i18n.language;
+    
+    // Mapear idiomas para sufixos dos campos
+    const langSuffix = {
+      'pt': '_pt',
+      'en': '_en', 
+      'fr': '_fr'
+    }[currentLang] || '_pt';
+    
+    // Tentar campo traduzido primeiro, depois fallback para campo base
+    const translatedField = `${field}${langSuffix}`;
+    return service[translatedField] || service[field] || '';
+  };
+
   // Função para obter ícone do serviço baseado nos campos de customização
   const getServiceIcon = (service: any) => {
     // Se tem emoji customizado, retorna um componente que renderiza o emoji
@@ -223,10 +239,10 @@ export default function Index() {
                       <div className="flex-1">
                         <CardTitle className="text-2xl mb-2 flex items-center gap-2">
                           <Icon className="w-6 h-6" style={{ color: hoverColor }} />
-                          {service.name}
+                          {getServiceText(service, 'name')}
                         </CardTitle>
                         <CardDescription className="text-base">
-                          {service.description}
+                          {getServiceText(service, 'description')}
                         </CardDescription>
                       </div>
                     </div>

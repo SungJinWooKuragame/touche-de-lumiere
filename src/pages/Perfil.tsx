@@ -184,8 +184,7 @@ export default function Perfil() {
         .from("profiles")
         .update({
           full_name: editForm.full_name,
-          phone: editForm.phone,
-          updated_at: new Date().toISOString()
+          phone: editForm.phone
         })
         .eq("id", user.id);
 
