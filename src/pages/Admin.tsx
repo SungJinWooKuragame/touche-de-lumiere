@@ -1445,7 +1445,8 @@ Deseja continuar?`);
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const serviceData = {
+    // Dados básicos (sempre funcionam)
+    const basicServiceData = {
       name: formData.get("name_pt") as string, // Manter compatibilidade
       name_pt: formData.get("name_pt") as string,
       name_en: formData.get("name_en") as string,
@@ -1457,17 +1458,33 @@ Deseja continuar?`);
       duration_minutes: parseInt(formData.get("duration_minutes") as string),
       price: parseFloat(formData.get("price") as string),
       active: formData.get("active") === "true",
-      // Novos campos de customização
+    };
+
+    // Campos de customização (podem não existir ainda)
+    const customizationData = {
       icon_name: formData.get("icon_name") as string,
       icon_emoji: formData.get("icon_emoji") as string || null,
       hover_color: formData.get("hover_color") as string,
     };
 
+    // Tenta salvar com customização primeiro
+    let serviceData = { ...basicServiceData, ...customizationData };
+
     if (editingService) {
-      const { error } = await supabase
+      let { error } = await supabase
         .from("services")
         .update(serviceData)
         .eq("id", editingService.id);
+
+      // Se der erro, tenta sem os campos de customização
+      if (error && error.message.includes('column')) {
+        console.warn('Campos de customização não existem ainda, salvando apenas dados básicos');
+        const { error: basicError } = await supabase
+          .from("services")
+          .update(basicServiceData)
+          .eq("id", editingService.id);
+        error = basicError;
+      }
 
       if (error) {
         toast({
@@ -1479,9 +1496,18 @@ Deseja continuar?`);
         toast({ title: "Serviço atualizado!" });
       }
     } else {
-      const { error } = await supabase
+      let { error } = await supabase
         .from("services")
         .insert([serviceData]);
+
+      // Se der erro, tenta sem os campos de customização
+      if (error && error.message.includes('column')) {
+        console.warn('Campos de customização não existem ainda, salvando apenas dados básicos');
+        const { error: basicError } = await supabase
+          .from("services")
+          .insert([basicServiceData]);
+        error = basicError;
+      }
 
       if (error) {
         toast({
