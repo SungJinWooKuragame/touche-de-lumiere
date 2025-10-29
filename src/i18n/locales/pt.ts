@@ -9,7 +9,8 @@ export const pt = {
     signup: "Criar Conta",
     book: "Agendar",
     profile: "Perfil",
-    admin: "Admin"
+    admin: "Admin",
+    logout: "Sair"
   },
   
   // Hero Section

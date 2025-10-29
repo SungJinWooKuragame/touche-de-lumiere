@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Sparkles, Calendar, LogOut, User, Settings, Phone, Briefcase } from "lucide-react";
+import { Sparkles, Calendar, LogOut, User, Settings, Phone, Briefcase, Menu, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -14,6 +14,7 @@ export const Navbar = () => {
   const { t } = useTranslation();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Verificar se está na página admin
   const isAdminPage = location.pathname === '/admin';
@@ -53,6 +54,16 @@ export const Navbar = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
+    setMobileMenuOpen(false);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
+  const handleMobileNavigation = (action: () => void) => {
+    action();
+    closeMobileMenu();
   };
 
   // Verificar se é owner no admin
@@ -60,14 +71,14 @@ export const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border shadow-soft">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
+      <div className="container mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 sm:gap-3 group" onClick={closeMobileMenu}>
           <div className="relative">
             {/* Flor de lótus linda personalizada */}
             <img 
               src="/beautiful-lotus.svg" 
               alt="Therapy Flow Logo" 
-              className="w-8 h-8 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 filter hover:brightness-110"
+              className="w-6 h-6 sm:w-8 sm:h-8 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 filter hover:brightness-110"
               onError={(e) => {
                 // Fallback para ícone SVG se a imagem não carregar
                 e.currentTarget.style.display = 'none';
@@ -75,16 +86,17 @@ export const Navbar = () => {
               }}
             />
             {/* Fallback SVG logo */}
-            <div className="w-8 h-8 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300 bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center hidden">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300 bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center hidden">
+              <Sparkles className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
             </div>
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent max-w-[180px] truncate">
+          <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent max-w-[120px] sm:max-w-[180px] truncate">
             {t('nav.brand')}
           </span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-4">
           {/* Botões de navegação com ícones e restrições para admin */}
           <div className="relative group">
             <button 
@@ -94,7 +106,7 @@ export const Navbar = () => {
                 }
               }}
               disabled={isOwnerInAdmin}
-              className={`flex items-center gap-2 transition-smooth hidden md:flex ${
+              className={`flex items-center gap-2 transition-smooth ${
                 isOwnerInAdmin 
                   ? 'text-gray-400 cursor-not-allowed' 
                   : 'text-foreground/80 hover:text-primary cursor-pointer'
@@ -119,7 +131,7 @@ export const Navbar = () => {
                 }
               }}
               disabled={isOwnerInAdmin}
-              className={`flex items-center gap-2 transition-smooth hidden md:flex ${
+              className={`flex items-center gap-2 transition-smooth ${
                 isOwnerInAdmin 
                   ? 'text-gray-400 cursor-not-allowed' 
                   : 'text-foreground/80 hover:text-primary cursor-pointer'
@@ -146,7 +158,7 @@ export const Navbar = () => {
                   }
                 }}
                 disabled={isOwnerInAdmin}
-                className={`flex items-center gap-2 transition-smooth hidden md:flex ${
+                className={`flex items-center gap-2 transition-smooth ${
                   isOwnerInAdmin 
                     ? 'text-gray-400 cursor-not-allowed' 
                     : 'text-foreground/80 hover:text-primary cursor-pointer'
@@ -191,7 +203,112 @@ export const Navbar = () => {
             </div>
           )}
         </div>
+
+        {/* Mobile Menu Button */}
+        <div className="flex md:hidden items-center gap-2">
+          <LanguageSelector />
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+        </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-background/95 backdrop-blur-md border-b border-border shadow-lg">
+          <div className="container mx-auto px-4 py-4 space-y-3">
+            {/* Navigation Links */}
+            {!isOwnerInAdmin && (
+              <>
+                <button 
+                  onClick={() => handleMobileNavigation(() => 
+                    document.getElementById('servicos')?.scrollIntoView({ behavior: 'smooth' })
+                  )}
+                  className="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg hover:bg-accent transition-colors"
+                >
+                  <Briefcase className="w-4 h-4" />
+                  {t('nav.services')}
+                </button>
+                
+                <button 
+                  onClick={() => handleMobileNavigation(() => 
+                    document.getElementById('contato')?.scrollIntoView({ behavior: 'smooth' })
+                  )}
+                  className="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg hover:bg-accent transition-colors"
+                >
+                  <Phone className="w-4 h-4" />
+                  {t('nav.contact')}
+                </button>
+              </>
+            )}
+
+            {/* Admin Button for Owners */}
+            {userRole === 'owner' && !isOwnerInAdmin && (
+              <button 
+                onClick={() => handleMobileNavigation(() => navigate('/admin'))}
+                className="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg hover:bg-accent transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Admin
+              </button>
+            )}
+
+            {/* User Actions */}
+            {user ? (
+              <>
+                <button 
+                  onClick={() => handleMobileNavigation(() => navigate("/agendar"))}
+                  className="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg hover:bg-accent transition-colors"
+                >
+                  <Calendar className="w-4 h-4" />
+                  {t('nav.book')}
+                </button>
+                
+                <button 
+                  onClick={() => handleMobileNavigation(() => navigate("/perfil"))}
+                  className="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg hover:bg-accent transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  {t('nav.profile')}
+                </button>
+                
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg hover:bg-accent transition-colors text-red-600"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {t('nav.logout')}
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => handleMobileNavigation(() => navigate("/login"))}
+                  className="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg hover:bg-accent transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  {t('nav.login')}
+                </button>
+                
+                <Button 
+                  variant="hero" 
+                  size="sm" 
+                  onClick={() => handleMobileNavigation(() => navigate("/login?tab=signup"))}
+                  className="w-full mt-2"
+                >
+                  {t('nav.signup')}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

@@ -9,7 +9,8 @@ export const fr = {
     signup: "Créer un compte",
     book: "Réserver",
     profile: "Profil",
-    admin: "Admin"
+    admin: "Admin",
+    logout: "Déconnexion"
   },
   
   // Hero Section

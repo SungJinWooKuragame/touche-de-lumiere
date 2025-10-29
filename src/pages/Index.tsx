@@ -12,10 +12,12 @@ export default function Index() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [settings, setSettings] = useState<Record<string, string>>({});
+  const [services, setServices] = useState<any[]>([]);
   const [isVisible, setIsVisible] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadSettings();
+    loadServices();
   }, []);
 
   const loadSettings = async () => {
@@ -27,6 +29,81 @@ export default function Index() {
       }, {} as Record<string, string>);
       setSettings(settingsMap);
     }
+  };
+
+  const loadServices = async () => {
+    const { data, error } = await supabase
+      .from('services')
+      .select('*')
+      .eq('active', true)
+      .order('name');
+
+    if (!error && data) {
+      console.log('🎯 Serviços carregados na home:', data);
+      setServices(data);
+    } else if (error) {
+      console.error('❌ Erro ao carregar serviços:', error);
+      // Fallback para serviços padrão se houver erro
+      setServices([
+        {
+          name: t('services.relaxingMassage'),
+          description: t('services.relaxingDesc'),
+          duration_minutes: 60,
+          price: 150.00,
+        },
+        {
+          name: t('services.therapeuticMassage'),
+          description: t('services.therapeuticDesc'),
+          duration_minutes: 60,
+          price: 180.00,
+        },
+        {
+          name: t('services.reiki'),
+          description: t('services.reikiDesc'),
+          duration_minutes: 45,
+          price: 120.00,
+        },
+        {
+          name: t('services.combo'),
+          description: t('services.comboDesc'),
+          duration_minutes: 90,
+          price: 250.00,
+        },
+      ]);
+    }
+  };
+
+  // Função para obter ícone do serviço baseado nos campos de customização
+  const getServiceIcon = (service: any) => {
+    // Se tem emoji customizado, retorna um componente que renderiza o emoji
+    if (service.icon_emoji) {
+      return ({ className }: { className?: string }) => (
+        <span className={`inline-block ${className}`} style={{ fontSize: '1.5em' }}>
+          {service.icon_emoji}
+        </span>
+      );
+    }
+    
+    // Se tem ícone customizado, mapeia para o componente correspondente
+    if (service.icon_name) {
+      const iconMap: Record<string, any> = {
+        sparkles: Sparkles,
+        heart: Heart,
+        zap: Zap,
+        star: Sparkles, // Fallback para star
+        sun: Sparkles,  // Fallback 
+        moon: Sparkles, // Fallback
+        flower: Heart,  // Fallback
+        leaf: Heart,    // Fallback
+      };
+      return iconMap[service.icon_name] || Sparkles;
+    }
+    
+    // Fallback para lógica antiga baseada no nome
+    const name = (service.name || '').toLowerCase();
+    if (name.includes('reiki') || name.includes('energia')) return Sparkles;
+    if (name.includes('terapêutica') || name.includes('therapeutic')) return Zap;
+    return Heart; // Padrão
   };
 
   useEffect(() => {
@@ -62,37 +139,6 @@ export default function Index() {
     const key = `hero_subtitle_${i18n.language}`;
     return settings[key] || t('hero.subtitle');
   };
-
-  const services = [
-    {
-      name: t('services.relaxingMassage'),
-      description: t('services.relaxingDesc'),
-      duration: `60 ${t('services.duration')}`,
-      price: "€ 150,00",
-      icon: Heart,
-    },
-    {
-      name: t('services.therapeuticMassage'),
-      description: t('services.therapeuticDesc'),
-      duration: `60 ${t('services.duration')}`,
-      price: "€ 180,00",
-      icon: Zap,
-    },
-    {
-      name: t('services.reiki'),
-      description: t('services.reikiDesc'),
-      duration: `45 ${t('services.duration')}`,
-      price: "€ 120,00",
-      icon: Sparkles,
-    },
-    {
-      name: t('services.combo'),
-      description: t('services.comboDesc'),
-      duration: `90 ${t('services.duration')}`,
-      price: "€ 250,00",
-      icon: Heart,
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,20 +194,35 @@ export default function Index() {
 
           <div className="grid md:grid-cols-2 gap-6">
             {services.map((service, index) => {
-              const Icon = service.icon;
+              const Icon = getServiceIcon(service);
+              const duration = service.duration_minutes ? `${service.duration_minutes} ${t('services.duration')}` : '';
+              const price = service.price ? `€ ${service.price.toFixed(2).replace('.', ',')}` : '';
+              const hoverColor = service.hover_color || '#3B82F6';
+              
               return (
                 <Card 
-                  key={index} 
-                  className={`shadow-soft hover:shadow-glow transition-all duration-500 hover:scale-[1.02] ${
+                  key={service.id || index} 
+                  className={`shadow-soft hover:shadow-glow transition-all duration-500 hover:scale-[1.02] cursor-pointer ${
                     isVisible['servicos'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
                   }`}
-                  style={{ transitionDelay: `${index * 100}ms` }}
+                  style={{ 
+                    transitionDelay: `${index * 100}ms`,
+                    '--hover-color': hoverColor
+                  } as React.CSSProperties}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = hoverColor;
+                    e.currentTarget.style.boxShadow = `0 10px 40px ${hoverColor}33`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '';
+                    e.currentTarget.style.boxShadow = '';
+                  }}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <CardTitle className="text-2xl mb-2 flex items-center gap-2">
-                          <Icon className="w-6 h-6 text-primary" />
+                          <Icon className="w-6 h-6" style={{ color: hoverColor }} />
                           {service.name}
                         </CardTitle>
                         <CardDescription className="text-base">
@@ -172,9 +233,16 @@ export default function Index() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">{service.duration}</span>
-                      <span className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
-                        {service.price}
+                      <span className="text-muted-foreground">{duration}</span>
+                      <span 
+                        className="text-2xl font-bold bg-clip-text text-transparent"
+                        style={{
+                          background: `linear-gradient(135deg, ${hoverColor}, ${hoverColor}aa)`,
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent'
+                        }}
+                      >
+                        {price}
                       </span>
                     </div>
                   </CardContent>

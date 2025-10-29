@@ -152,6 +152,20 @@ export default function Agendar() {
     const slotStart = hours * 60 + minutes;
     const slotEnd = slotStart + durationMinutes;
 
+    // 🕐 VERIFICAR SE É HOJE E SE O HORÁRIO JÁ PASSOU
+    const today = new Date();
+    const isToday = selectedDate.toDateString() === today.toDateString();
+    
+    if (isToday) {
+      const currentTimeMinutes = today.getHours() * 60 + today.getMinutes();
+      // Adicionar margem de 30 minutos para preparação
+      const minimumTimeMinutes = currentTimeMinutes + 30;
+      
+      if (slotStart < minimumTimeMinutes) {
+        return false; // Horário já passou ou muito próximo
+      }
+    }
+
     // 🏆 PRIORIDADE 1: CONSULTAS EXISTENTES (PRIORIDADE MÁXIMA)
     // Consultas já agendadas têm prioridade absoluta e nunca são bloqueadas
     // Só podem ser removidas por cancelamento manual
@@ -318,7 +332,12 @@ export default function Agendar() {
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => {
+                      // Permitir a partir de hoje (não apenas de amanhã)
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return date < today;
+                    }}
                     locale={ptBR}
                     className="rounded-md border shadow-soft"
                   />

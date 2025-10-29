@@ -273,6 +273,7 @@ Deseja continuar?`);
   const [services, setServices] = useState<any[]>([]);
   const [editingService, setEditingService] = useState<any>(null);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [servicePreview, setServicePreview] = useState<any>({});
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [isSettingsLoading, setIsSettingsLoading] = useState(false);
   
@@ -1031,13 +1032,16 @@ Deseja continuar?`);
       .select(`
         *,
         services (name, price, duration_minutes),
-        profiles (full_name, email, phone)
+        profiles:client_id (full_name, email, phone)
       `)
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
 
-    if (!error) {
+    if (!error && data) {
+      console.log('📊 Agendamentos carregados:', data);
       setAppointments(data || []);
+    } else if (error) {
+      console.error('❌ Erro ao carregar agendamentos:', error);
     }
   };
 
@@ -1236,7 +1240,7 @@ Deseja continuar?`);
         .from("appointments")
         .select(`
           *,
-          profiles (full_name, email, phone),
+          profiles:client_id (full_name, email, phone),
           services (name, duration_minutes, price)
         `)
         .eq("id", aptId)
@@ -1414,6 +1418,29 @@ Deseja continuar?`);
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
+  // Função para atualizar preview do serviço em tempo real
+  const updateServicePreview = (field: string, value: any) => {
+    setServicePreview(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Reset preview when opening dialog
+  const handleOpenServiceDialog = (service: any = null) => {
+    setEditingService(service);
+    setServicePreview(service || {
+      name_pt: '',
+      description_pt: '',
+      duration_minutes: 60,
+      price: 0,
+      icon_name: 'sparkles',
+      icon_emoji: '',
+      hover_color: '#3B82F6'
+    });
+    setIsServiceDialogOpen(true);
+  };
+
   const handleSaveService = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -1430,6 +1457,10 @@ Deseja continuar?`);
       duration_minutes: parseInt(formData.get("duration_minutes") as string),
       price: parseFloat(formData.get("price") as string),
       active: formData.get("active") === "true",
+      // Novos campos de customização
+      icon_name: formData.get("icon_name") as string,
+      icon_emoji: formData.get("icon_emoji") as string || null,
+      hover_color: formData.get("hover_color") as string,
     };
 
     if (editingService) {
@@ -1826,7 +1857,7 @@ Deseja continuar?`);
                   </div>
                   <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button onClick={() => setEditingService(null)}>
+                      <Button onClick={() => handleOpenServiceDialog()}>
                         <Plus className="w-4 h-4 mr-2" />
                         Novo Serviço
                       </Button>
@@ -1848,6 +1879,7 @@ Deseja continuar?`);
                                 name="name_pt"
                                 defaultValue={editingService?.name_pt || editingService?.name}
                                 placeholder="Ex: Massagem Relaxante"
+                                onChange={(e) => updateServicePreview('name_pt', e.target.value)}
                                 required
                               />
                             </div>
@@ -1882,6 +1914,7 @@ Deseja continuar?`);
                                 name="description_pt"
                                 defaultValue={editingService?.description_pt || editingService?.description}
                                 placeholder="Descrição em português..."
+                                onChange={(e) => updateServicePreview('description_pt', e.target.value)}
                                 rows={2}
                               />
                             </div>
@@ -1914,6 +1947,7 @@ Deseja continuar?`);
                             name="duration_minutes"
                             type="number"
                             defaultValue={editingService?.duration_minutes}
+                            onChange={(e) => updateServicePreview('duration_minutes', parseInt(e.target.value) || 0)}
                             required
                           />
                         </div>
@@ -1925,9 +1959,130 @@ Deseja continuar?`);
                             type="number"
                             step="0.01"
                             defaultValue={editingService?.price}
+                            onChange={(e) => updateServicePreview('price', parseFloat(e.target.value) || 0)}
                             required
                           />
                         </div>
+                        
+                        {/* Customização Visual */}
+                        <div className="grid grid-cols-1 gap-4 border-t pt-4">
+                          <h4 className="font-medium text-sm text-muted-foreground">Customização Visual</h4>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor="icon_name">Ícone (Lucide)</Label>
+                              <Select
+                                name="icon_name"
+                                defaultValue={editingService?.icon_name || "sparkles"}
+                                onValueChange={(value) => updateServicePreview('icon_name', value)}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Selecione um ícone" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="sparkles">✨ Sparkles</SelectItem>
+                                  <SelectItem value="heart">❤️ Heart</SelectItem>
+                                  <SelectItem value="zap">⚡ Zap</SelectItem>
+                                  <SelectItem value="star">⭐ Star</SelectItem>
+                                  <SelectItem value="sun">☀️ Sun</SelectItem>
+                                  <SelectItem value="moon">🌙 Moon</SelectItem>
+                                  <SelectItem value="flower">🌸 Flower</SelectItem>
+                                  <SelectItem value="leaf">🍃 Leaf</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="icon_emoji">Emoji (opcional)</Label>
+                              <Input
+                                id="icon_emoji"
+                                name="icon_emoji"
+                                defaultValue={editingService?.icon_emoji}
+                                placeholder="🌸 ou deixe vazio"
+                                onChange={(e) => updateServicePreview('icon_emoji', e.target.value)}
+                                maxLength={2}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="hover_color">Cor de Hover</Label>
+                            <div className="flex gap-2 items-center">
+                              <Input
+                                id="hover_color"
+                                name="hover_color"
+                                type="color"
+                                defaultValue={editingService?.hover_color || "#3B82F6"}
+                                onChange={(e) => updateServicePreview('hover_color', e.target.value)}
+                                className="w-16 h-10 p-1 rounded"
+                              />
+                              <Input
+                                defaultValue={editingService?.hover_color || "#3B82F6"}
+                                placeholder="#3B82F6"
+                                className="flex-1"
+                                onChange={(e) => {
+                                  updateServicePreview('hover_color', e.target.value);
+                                  const colorInput = document.getElementById('hover_color') as HTMLInputElement;
+                                  if (colorInput) colorInput.value = e.target.value;
+                                }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Preview Card */}
+                          <div>
+                            <Label>Preview</Label>
+                            <div 
+                              className="border rounded-lg p-4 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                              style={{
+                                '--hover-color': servicePreview.hover_color || '#3B82F6'
+                              } as React.CSSProperties}
+                              onMouseEnter={(e) => {
+                                const color = servicePreview.hover_color || '#3B82F6';
+                                e.currentTarget.style.borderColor = color;
+                                e.currentTarget.style.boxShadow = `0 4px 20px ${color}33`;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = '';
+                                e.currentTarget.style.boxShadow = '';
+                              }}
+                            >
+                              <div className="flex items-center gap-2">
+                                {servicePreview.icon_emoji ? (
+                                  <span className="text-xl">{servicePreview.icon_emoji}</span>
+                                ) : (
+                                  <div 
+                                    className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center"
+                                    style={{ color: servicePreview.hover_color || '#3B82F6' }}
+                                  >
+                                    {servicePreview.icon_name === 'heart' && '❤️'}
+                                    {servicePreview.icon_name === 'zap' && '⚡'}
+                                    {servicePreview.icon_name === 'star' && '⭐'}
+                                    {(!servicePreview.icon_name || servicePreview.icon_name === 'sparkles') && '✨'}
+                                    {servicePreview.icon_name === 'sun' && '☀️'}
+                                    {servicePreview.icon_name === 'moon' && '🌙'}
+                                    {servicePreview.icon_name === 'flower' && '�'}
+                                    {servicePreview.icon_name === 'leaf' && '🍃'}
+                                  </div>
+                                )}
+                                <div>
+                                  <h4 className="font-semibold">
+                                    {servicePreview.name_pt || 'Nome do Serviço'}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {servicePreview.duration_minutes || 60}min - €{(servicePreview.price || 0).toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                              {servicePreview.description_pt && (
+                                <p className="text-sm text-muted-foreground mt-2">
+                                  {servicePreview.description_pt}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
                         <div>
                           <Label htmlFor="active">Status</Label>
                           <Select
