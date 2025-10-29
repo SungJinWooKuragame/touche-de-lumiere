@@ -1862,14 +1862,14 @@ Deseja continuar?`);
                         Novo Serviço
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
-                      <DialogHeader>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                      <DialogHeader className="flex-shrink-0">
                         <DialogTitle>
                           {editingService ? "Editar Serviço" : "Novo Serviço"}
                         </DialogTitle>
                       </DialogHeader>
-                      <div className="max-h-[70vh] overflow-y-auto scrollbar-thin px-1">
-                        <form onSubmit={handleSaveService} className="space-y-6 pb-4">
+                      <div className="flex-1 overflow-y-auto scrollbar-thin scroll-container px-1 max-h-[calc(90vh-8rem)]">
+                        <form onSubmit={handleSaveService} className="space-y-6 pb-6">
                         <div className="grid grid-cols-1 gap-4">
                           <h4 className="font-medium text-sm text-muted-foreground">Nome do Serviço</h4>
                           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">

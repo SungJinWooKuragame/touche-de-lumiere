@@ -364,6 +364,8 @@ All colors MUST be HSL.
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -377,9 +379,29 @@ All colors MUST be HSL.
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: hsl(var(--border));
   border-radius: 3px;
+  transition: background-color 0.2s ease;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background-color: hsl(var(--muted-foreground));
+}
+
+/* Prevenir scroll excessivo */
+.scroll-container {
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+}
+
+/* Prevenir scroll em inputs dentro de containers com scroll */
+.scroll-container input,
+.scroll-container textarea,
+.scroll-container select {
+  overscroll-behavior: contain;
+}
+
+.scroll-container input:focus,
+.scroll-container textarea:focus,
+.scroll-container select:focus {
+  scroll-margin: 1rem;
 }
 
