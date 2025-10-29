@@ -1327,7 +1327,7 @@ Deseja continuar?`);
     const grouped: Record<string, any[]> = {};
     
     appointments.forEach(apt => {
-      const clientKey = apt.profiles?.full_name || `Cliente ${apt.client_id}`;
+       const clientKey = apt.profiles?.full_name || 'Cliente sem nome';
       if (!grouped[clientKey]) {
         grouped[clientKey] = [];
       }

@@ -78,18 +78,18 @@ COMMIT;
 -- Execute estas queries separadamente para confirmar:
 -- ====================================
 
--- Ver usuário owner mantido:
--- SELECT p.*, ur.role 
--- FROM public.profiles p
--- LEFT JOIN public.user_roles ur ON ur.user_id = p.id
--- WHERE ur.role = 'owner';
+Ver usuário owner mantido:
+SELECT p.*, ur.role 
+FROM public.profiles p
+LEFT JOIN public.user_roles ur ON ur.user_id = p.id
+WHERE ur.role = 'owner';
 
--- Contar registros restantes:
--- SELECT 
---   'Usuários' as tabela, COUNT(*) as total FROM public.profiles
--- UNION ALL
--- SELECT 'Roles', COUNT(*) FROM public.user_roles
--- UNION ALL
--- SELECT 'Agendamentos', COUNT(*) FROM public.appointments
--- UNION ALL
--- SELECT 'Serviços', COUNT(*) FROM public.services;
+Contar registros restantes:
+SELECT 
+  'Usuários' as tabela, COUNT(*) as total FROM public.profiles
+UNION ALL
+SELECT 'Roles', COUNT(*) FROM public.user_roles
+UNION ALL
+SELECT 'Agendamentos', COUNT(*) FROM public.appointments
+UNION ALL
+SELECT 'Serviços', COUNT(*) FROM public.services;
