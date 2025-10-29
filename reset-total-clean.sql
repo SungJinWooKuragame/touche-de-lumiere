@@ -30,8 +30,11 @@ DELETE FROM public.operating_hours;
 DELETE FROM public.user_roles;
 
 -- 7. Deletar TODOS os perfis (incluindo owner)
--- Isso também deletará TODOS os usuários do auth.users via CASCADE
 DELETE FROM public.profiles;
+
+-- 8. Deletar TODOS os usuários da tabela de autenticação
+-- IMPORTANTE: Isso remove as contas de login do Supabase Auth
+DELETE FROM auth.users;
 
 COMMIT;
 
