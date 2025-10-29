@@ -1862,16 +1862,17 @@ Deseja continuar?`);
                         Novo Serviço
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
                       <DialogHeader>
                         <DialogTitle>
                           {editingService ? "Editar Serviço" : "Novo Serviço"}
                         </DialogTitle>
                       </DialogHeader>
-                      <form onSubmit={handleSaveService} className="space-y-4">
+                      <div className="max-h-[70vh] overflow-y-auto scrollbar-thin px-1">
+                        <form onSubmit={handleSaveService} className="space-y-6 pb-4">
                         <div className="grid grid-cols-1 gap-4">
                           <h4 className="font-medium text-sm text-muted-foreground">Nome do Serviço</h4>
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div>
                               <Label htmlFor="name_pt">Português</Label>
                               <Input
@@ -1968,7 +1969,7 @@ Deseja continuar?`);
                         <div className="grid grid-cols-1 gap-4 border-t pt-4">
                           <h4 className="font-medium text-sm text-muted-foreground">Customização Visual</h4>
                           
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <Label htmlFor="icon_name">Ícone (Lucide)</Label>
                               <Select
@@ -2102,6 +2103,7 @@ Deseja continuar?`);
                           {editingService ? "Atualizar" : "Criar"}
                         </Button>
                       </form>
+                      </div>
                     </DialogContent>
                   </Dialog>
                 </CardHeader>
