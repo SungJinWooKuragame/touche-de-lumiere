@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Eye, EyeOff, CheckCircle, XCircle, Phone } from "lucide-react";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 // Validação para telefone internacional
 const phoneSchema = z.string()
@@ -147,6 +148,33 @@ export default function Login() {
       redirectTo: `${window.location.origin}/reset-password`,
     });
 
+    // Se o reset foi bem-sucedido, enviar email personalizado
+    if (!error) {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            email: resetEmail,
+            type: 'reset_password',
+            confirmationUrl: `${window.location.origin}/reset-password`,
+            language: i18n.language,
+          }),
+        });
+
+        if (response.ok) {
+          console.log('📧 Email de reset personalizado enviado com sucesso');
+        } else {
+          console.warn('⚠️ Falha ao enviar email de reset personalizado, será usado o padrão');
+        }
+      } catch (emailError) {
+        console.warn('⚠️ Erro ao enviar email de reset personalizado:', emailError);
+      }
+    }
+
     if (error) {
       toast({
         variant: "destructive",
@@ -269,9 +297,38 @@ export default function Login() {
         data: {
           full_name: signupName,
           phone: signupPhone,
+          language: i18n.language, // Capturar idioma atual
         },
       },
     });
+
+    // Se o signup foi bem-sucedido, enviar email personalizado
+    if (!error) {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            email: signupEmail,
+            type: 'signup',
+            confirmationUrl: `${window.location.origin}/auth/confirm`, // Será substituído pelo Supabase
+            language: i18n.language,
+            userName: signupName
+          }),
+        });
+
+        if (response.ok) {
+          console.log('📧 Email personalizado enviado com sucesso');
+        } else {
+          console.warn('⚠️ Falha ao enviar email personalizado, será usado o padrão');
+        }
+      } catch (emailError) {
+        console.warn('⚠️ Erro ao enviar email personalizado:', emailError);
+      }
+    }
 
     if (error) {
       toast({

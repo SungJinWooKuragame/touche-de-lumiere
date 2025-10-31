@@ -196,6 +196,20 @@ export const fr = {
     configureSite: "Configurez les informations qui apparaissent sur le site"
   },
   
+  // Email Templates
+  email: {
+    signup: {
+      subject: "✨ Confirmez votre inscription - Touche de Lumière",
+      title: "Confirmez votre inscription",
+      greeting: "Bonjour ! Bienvenue chez Touche de Lumière",
+      message: "Pour finaliser votre inscription et commencer à réserver vos séances de bien-être, cliquez sur le lien ci-dessous :",
+      confirmButton: "Confirmer mon email",
+      footer: "Merci d'avoir choisi nos services de massage thérapeutique et Reiki.",
+      signature: "Équipe Touche de Lumière",
+      note: "Si vous n'avez pas créé ce compte, vous pouvez ignorer cet email."
+    }
+  },
+
   common: {
     loading: "Chargement...",
     error: "Erreur",

@@ -196,6 +196,20 @@ export const pt = {
     configureSite: "Configure as informações que aparecem no site"
   },
   
+  // Email Templates
+  email: {
+    signup: {
+      subject: "✨ Confirme seu cadastro - Touche de Lumière",
+      title: "Confirme seu cadastro",
+      greeting: "Olá! Bem-vindo ao Touche de Lumière",
+      message: "Para completar seu cadastro e começar a agendar suas sessões de bem-estar, clique no link abaixo:",
+      confirmButton: "Confirmar meu email",
+      footer: "Obrigado por escolher nossos serviços de massagem terapêutica e Reiki.",
+      signature: "Equipe Touche de Lumière",
+      note: "Se você não criou esta conta, pode ignorar este email."
+    }
+  },
+
   common: {
     loading: "Carregando...",
     error: "Erro",
