@@ -1032,7 +1032,7 @@ Deseja continuar?`);
       .select(`
         *,
         services (name, price, duration_minutes),
-        profiles:client_id (id, user_id, full_name, email, phone)
+        profiles:client_id (full_name, email, phone)
       `)
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
@@ -1472,10 +1472,12 @@ Deseja continuar?`);
 
     // Campos de customização (podem não existir ainda)
     const customizationData = {
-      icon_name: formData.get("icon_name") as string,
+      icon_name: formData.get("icon_name") as string || 'sparkles',
       icon_emoji: formData.get("icon_emoji") as string || null,
-      hover_color: formData.get("hover_color") as string,
+      hover_color: formData.get("hover_color") as string || '#3B82F6',
     };
+
+    console.log('💾 Tentando salvar serviço:', { basicServiceData, customizationData });
 
     // Tenta salvar com customização primeiro
     let serviceData = { ...basicServiceData, ...customizationData };
@@ -1487,22 +1489,33 @@ Deseja continuar?`);
         .eq("id", editingService.id);
 
       // Se der erro de coluna/esquema, tenta sem os campos de customização
-      if (error && (error.message?.toLowerCase().includes('column') || error.message?.toLowerCase().includes('schema'))) {
-        console.warn('Campos de customização não existem ainda, salvando apenas dados básicos');
+      if (error && (error.message?.toLowerCase().includes('column') || error.message?.toLowerCase().includes('schema') || error.message?.toLowerCase().includes('cache'))) {
+        console.warn('⚠️ Campos de customização não existem no banco, salvando apenas dados básicos');
+        console.error('Erro original:', error.message);
         const { error: basicError } = await supabase
           .from("services")
           .update(basicServiceData)
           .eq("id", editingService.id);
         error = basicError;
+        
+        if (!basicError) {
+          toast({
+            title: "⚠️ Serviço atualizado (sem customização)",
+            description: "Execute a migração 20251101000000_fix_services_multilingual_columns.sql para habilitar cor/emoji",
+            duration: 8000,
+          });
+        }
       }
 
       if (error) {
+        console.error('❌ Erro ao atualizar serviço:', error);
         toast({
           variant: "destructive",
           title: "Erro",
           description: error.message,
         });
-      } else {
+      } else if (!error) {
+        console.log('✅ Serviço atualizado com sucesso!');
         toast({ title: "Serviço atualizado!" });
       }
     } else {
@@ -1511,21 +1524,32 @@ Deseja continuar?`);
         .insert([serviceData]);
 
       // Se der erro de coluna/esquema, tenta sem os campos de customização
-      if (error && (error.message?.toLowerCase().includes('column') || error.message?.toLowerCase().includes('schema'))) {
-        console.warn('Campos de customização não existem ainda, salvando apenas dados básicos');
+      if (error && (error.message?.toLowerCase().includes('column') || error.message?.toLowerCase().includes('schema') || error.message?.toLowerCase().includes('cache'))) {
+        console.warn('⚠️ Campos de customização não existem no banco, salvando apenas dados básicos');
+        console.error('Erro original:', error.message);
         const { error: basicError } = await supabase
           .from("services")
           .insert([basicServiceData]);
         error = basicError;
+        
+        if (!basicError) {
+          toast({
+            title: "⚠️ Serviço criado (sem customização)",
+            description: "Execute a migração 20251101000000_fix_services_multilingual_columns.sql para habilitar cor/emoji",
+            duration: 8000,
+          });
+        }
       }
 
       if (error) {
+        console.error('❌ Erro ao criar serviço:', error);
         toast({
           variant: "destructive",
           title: "Erro",
           description: error.message,
         });
-      } else {
+      } else if (!error) {
+        console.log('✅ Serviço criado com sucesso!');
         toast({ title: "Serviço criado!" });
       }
     }
