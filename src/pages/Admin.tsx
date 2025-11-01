@@ -1476,8 +1476,8 @@ Deseja continuar?`);
         .update(serviceData)
         .eq("id", editingService.id);
 
-      // Se der erro, tenta sem os campos de customização
-      if (error && error.message.includes('column')) {
+      // Se der erro de coluna/esquema, tenta sem os campos de customização
+      if (error && (error.message?.toLowerCase().includes('column') || error.message?.toLowerCase().includes('schema'))) {
         console.warn('Campos de customização não existem ainda, salvando apenas dados básicos');
         const { error: basicError } = await supabase
           .from("services")
@@ -1500,8 +1500,8 @@ Deseja continuar?`);
         .from("services")
         .insert([serviceData]);
 
-      // Se der erro, tenta sem os campos de customização
-      if (error && error.message.includes('column')) {
+      // Se der erro de coluna/esquema, tenta sem os campos de customização
+      if (error && (error.message?.toLowerCase().includes('column') || error.message?.toLowerCase().includes('schema'))) {
         console.warn('Campos de customização não existem ainda, salvando apenas dados básicos');
         const { error: basicError } = await supabase
           .from("services")
