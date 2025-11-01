@@ -2437,14 +2437,18 @@ Deseja continuar?`);
                         e.preventDefault();
                         const formData = new FormData(e.target as HTMLFormElement);
                         
+                        const startTime = (formData.get('start_time') as string) || '';
+                        const endTime = (formData.get('end_time') as string) || '';
                         const blockData = {
-                          title: formData.get('title'),
-                          description: formData.get('description'),
-                          block_type: formData.get('block_type'),
-                          start_date: formData.get('start_date'),
-                          end_date: formData.get('end_date'),
-                          start_time: formData.get('start_time') || null,
-                          end_time: formData.get('end_time') || null,
+                          // CamelCase shape expected by addDateBlock
+                          title: (formData.get('title') as string) || 'Bloqueio',
+                          description: (formData.get('description') as string) || '',
+                          blockType: (formData.get('block_type') as string) || 'custom',
+                          startDate: formData.get('start_date') as string,
+                          endDate: formData.get('end_date') as string,
+                          startTime,
+                          endTime,
+                          allDay: !(startTime && endTime),
                         };
                         
                         addDateBlock(blockData);
@@ -2562,9 +2566,9 @@ Deseja continuar?`);
                               <div>
                                 <div className="font-medium">{block.title}</div>
                                 <div className="text-sm text-muted-foreground">
-                                  {format(new Date(block.start_date), "dd/MM/yyyy", { locale: ptBR })} - {format(new Date(block.end_date), "dd/MM/yyyy", { locale: ptBR })}
-                                  {block.start_time && block.end_time && (
-                                    <span> • {block.start_time} às {block.end_time}</span>
+                                  {format(new Date(block.startDate), "dd/MM/yyyy", { locale: ptBR })} - {format(new Date(block.endDate), "dd/MM/yyyy", { locale: ptBR })}
+                                  {block.startTime && block.endTime && (
+                                    <span> • {block.startTime} às {block.endTime}</span>
                                   )}
                                 </div>
                                 {block.description && (
