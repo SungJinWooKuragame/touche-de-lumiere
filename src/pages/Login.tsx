@@ -151,24 +151,19 @@ export default function Login() {
     // Se o reset foi bem-sucedido, enviar email personalizado
     if (!error) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
+        const { data: fnData, error: fnError } = await supabase.functions.invoke('custom-auth-email', {
+          body: {
             email: resetEmail,
             type: 'reset_password',
             confirmationUrl: `${window.location.origin}/reset-password`,
             language: i18n.language,
-          }),
+          },
         });
 
-        if (response.ok) {
+        if (!fnError) {
           console.log('📧 Email de reset personalizado enviado com sucesso');
         } else {
-          console.warn('⚠️ Falha ao enviar email de reset personalizado, será usado o padrão');
+          console.warn('⚠️ Falha ao enviar email de reset personalizado, será usado o padrão', fnError);
         }
       } catch (emailError) {
         console.warn('⚠️ Erro ao enviar email de reset personalizado:', emailError);
@@ -305,25 +300,20 @@ export default function Login() {
     // Se o signup foi bem-sucedido, enviar email personalizado
     if (!error) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
+        const { data: fnData, error: fnError } = await supabase.functions.invoke('custom-auth-email', {
+          body: {
             email: signupEmail,
             type: 'signup',
             confirmationUrl: `${window.location.origin}/auth/confirm`, // Será substituído pelo Supabase
             language: i18n.language,
             userName: signupName
-          }),
+          },
         });
 
-        if (response.ok) {
+        if (!fnError) {
           console.log('📧 Email personalizado enviado com sucesso');
         } else {
-          console.warn('⚠️ Falha ao enviar email personalizado, será usado o padrão');
+          console.warn('⚠️ Falha ao enviar email personalizado, será usado o padrão', fnError);
         }
       } catch (emailError) {
         console.warn('⚠️ Erro ao enviar email personalizado:', emailError);
