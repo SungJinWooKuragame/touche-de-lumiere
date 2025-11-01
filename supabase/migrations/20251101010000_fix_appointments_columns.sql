@@ -1,22 +1,22 @@
--- ========================================
--- 🔧 CORREÇÃO: Garantir colunas necessárias em appointments
--- ========================================
+-- [DEPRECATED] This migration has been superseded by 20251101090000_full_schema_refresh.sql
+-- Keeping as a no-op to avoid conflicts if executed again.
 
 -- Adicionar coluna de motivo de cancelamento se não existir
-ALTER TABLE public.appointments 
-ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+DO $$ BEGIN
+  RAISE NOTICE 'Skipping deprecated migration: 20251101010000_fix_appointments_columns.sql (use 20251101090000_full_schema_refresh.sql)';
+END $$;
 
 -- Adicionar índice para busca por status
-CREATE INDEX IF NOT EXISTS idx_appointments_status ON public.appointments (status);
+-- No-op: handled by consolidated migration
 
 -- Adicionar índice para busca por data
-CREATE INDEX IF NOT EXISTS idx_appointments_date ON public.appointments (appointment_date);
+-- No-op: handled by consolidated migration
 
 -- Comentários
-COMMENT ON COLUMN public.appointments.cancellation_reason IS 'Motivo do cancelamento do agendamento';
+-- No-op: handled by consolidated migration
 
 -- Log de sucesso
 DO $$
 BEGIN
-  RAISE NOTICE '✅ Colunas de appointments verificadas e criadas se necessário';
+  RAISE NOTICE '✅ Deprecated migration executed as no-op: appointments columns';
 END $$;

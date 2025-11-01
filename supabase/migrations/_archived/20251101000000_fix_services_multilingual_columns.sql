@@ -1,27 +1,29 @@
+-- [ARCHIVED] Original migration preserved for history
+-- This file has been superseded by 20251101090000_full_schema_refresh.sql
+
 -- ========================================
--- [DEPRECATED] This migration has been superseded by 20251101090000_full_schema_refresh.sql
+-- 🔧 CORREÇÃO: Adicionar colunas multilíngues na tabela services
+-- ========================================
+-- Esta migração garante que todas as colunas necessárias existam
+-- Corrige erro: "Could not find the 'description_en' column of 'services' in the schema cache"
+
 -- Adicionar colunas de nome multilíngue (se não existirem)
 ALTER TABLE public.services 
 ADD COLUMN IF NOT EXISTS name_pt TEXT,
 ADD COLUMN IF NOT EXISTS name_en TEXT,
 ADD COLUMN IF NOT EXISTS name_fr TEXT;
-DO $$ BEGIN
-  RAISE NOTICE 'Skipping deprecated migration: 20251101000000_fix_services_multilingual_columns.sql (use 20251101090000_full_schema_refresh.sql)';
-END $$;
 
 -- Adicionar colunas de descrição multilíngue (se não existirem)
 ALTER TABLE public.services
 ADD COLUMN IF NOT EXISTS description_pt TEXT,
 ADD COLUMN IF NOT EXISTS description_en TEXT,
 ADD COLUMN IF NOT EXISTS description_fr TEXT;
--- No-op: handled by consolidated migration
 
 -- Adicionar colunas de customização visual (se não existirem)
 ALTER TABLE public.services
 ADD COLUMN IF NOT EXISTS icon_name TEXT DEFAULT 'sparkles',
 ADD COLUMN IF NOT EXISTS icon_emoji TEXT,
 ADD COLUMN IF NOT EXISTS hover_color TEXT DEFAULT '#3B82F6';
--- No-op: handled by consolidated migration
 
 -- Migrar dados existentes para os campos de português (se ainda não foram migrados)
 UPDATE public.services 
@@ -29,7 +31,6 @@ SET
   name_pt = COALESCE(name_pt, name),
   description_pt = COALESCE(description_pt, description)
 WHERE name_pt IS NULL OR description_pt IS NULL;
--- No-op: handled by consolidated migration
 
 -- Criar ou substituir funções de tradução
 CREATE OR REPLACE FUNCTION public.get_service_name(
@@ -71,7 +72,6 @@ BEGIN
   END CASE;
 END;
 $$;
--- No-op: handled by consolidated migration
 
 -- Criar ou substituir view multilíngue
 DROP VIEW IF EXISTS public.services_multilingual CASCADE;
@@ -85,19 +85,16 @@ SELECT
   COALESCE(s.description_en, s.description_pt, s.description) as display_description_en,
   COALESCE(s.description_fr, s.description_pt, s.description) as display_description_fr
 FROM public.services s;
--- No-op: handled by consolidated migration
 
 -- Garantir permissões
 GRANT SELECT ON public.services_multilingual TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_service_name(public.services, TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_service_description(public.services, TEXT) TO anon, authenticated;
--- No-op: handled by consolidated migration
 
 -- Adicionar índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_services_name_pt ON public.services (name_pt);
 CREATE INDEX IF NOT EXISTS idx_services_name_en ON public.services (name_en);
 CREATE INDEX IF NOT EXISTS idx_services_name_fr ON public.services (name_fr);
--- No-op: handled by consolidated migration
 
 -- Adicionar comentários
 COMMENT ON COLUMN public.services.name_pt IS 'Nome do serviço em português';
@@ -109,14 +106,9 @@ COMMENT ON COLUMN public.services.description_fr IS 'Descrição do serviço em 
 COMMENT ON COLUMN public.services.icon_name IS 'Nome do ícone Lucide para exibição';
 COMMENT ON COLUMN public.services.icon_emoji IS 'Emoji alternativo ao ícone';
 COMMENT ON COLUMN public.services.hover_color IS 'Cor hexadecimal para efeitos hover';
--- No-op: handled by consolidated migration
 
 -- Log de sucesso
 DO $$
 BEGIN
-  RAISE NOTICE '✅ Migração concluída: Colunas multilíngues adicionadas à tabela services';
-END $$;
-DO $$
-BEGIN
-  RAISE NOTICE '✅ Deprecated migration executed as no-op: services multilingual';
+  RAISE NOTICE '✅ Migração concluída: Colunas multilíngues adicionadas à tabela services (ARCHIVED)';
 END $$;

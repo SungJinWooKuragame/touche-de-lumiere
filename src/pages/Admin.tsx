@@ -727,26 +727,41 @@ Deseja continuar?`);
     try {
       setIsOperatingHoursLoading(true);
       
-      // Carregar do localStorage primeiro
-      const saved = localStorage.getItem('operatingHours');
-      if (saved) {
-        console.log('✅ Horários carregados do localStorage:', JSON.parse(saved));
-        setOperatingHours(JSON.parse(saved));
+      // Buscar do banco (Supabase) primeiro
+      const { data, error } = await (supabase as any)
+        .from('operating_hours')
+        .select('*')
+        .order('day_of_week');
+
+      if (error) {
+        console.warn('⚠️ Falha ao carregar horários do banco, usando fallback localStorage:', error.message);
+        const saved = localStorage.getItem('operatingHours');
+        if (saved) {
+          setOperatingHours(JSON.parse(saved));
+        } else {
+          const defaultData = [
+            { day_of_week: 0, is_open: false, open_time: null, close_time: null },
+            { day_of_week: 1, is_open: true, open_time: '08:00', close_time: '18:00' },
+            { day_of_week: 2, is_open: true, open_time: '08:00', close_time: '18:00' },
+            { day_of_week: 3, is_open: true, open_time: '08:00', close_time: '18:00' },
+            { day_of_week: 4, is_open: true, open_time: '08:00', close_time: '18:00' },
+            { day_of_week: 5, is_open: true, open_time: '08:00', close_time: '18:00' },
+            { day_of_week: 6, is_open: true, open_time: '08:00', close_time: '12:00' },
+          ];
+          setOperatingHours(defaultData);
+          localStorage.setItem('operatingHours', JSON.stringify(defaultData));
+        }
       } else {
-        // Se não tem dados salvos, usar dados padrão
-        const defaultData = [
-          { day_of_week: 0, is_open: false, open_time: null, close_time: null },
-          { day_of_week: 1, is_open: true, open_time: '08:00', close_time: '18:00' },
-          { day_of_week: 2, is_open: true, open_time: '08:00', close_time: '18:00' },
-          { day_of_week: 3, is_open: true, open_time: '08:00', close_time: '18:00' },
-          { day_of_week: 4, is_open: true, open_time: '08:00', close_time: '18:00' },
-          { day_of_week: 5, is_open: true, open_time: '08:00', close_time: '18:00' },
-          { day_of_week: 6, is_open: true, open_time: '08:00', close_time: '12:00' },
-        ];
-        setOperatingHours(defaultData);
-        // Salvar os dados padrão no localStorage
-        localStorage.setItem('operatingHours', JSON.stringify(defaultData));
-        console.log('✅ Horários padrão aplicados e salvos no localStorage');
+        // Converter TIMES do Postgres para HH:mm strings
+        const normalized = (data || []).map((h: any) => ({
+          day_of_week: h.day_of_week,
+          is_open: h.is_open,
+          open_time: h.open_time ? String(h.open_time).slice(0,5) : null,
+          close_time: h.close_time ? String(h.close_time).slice(0,5) : null,
+        }));
+        setOperatingHours(normalized);
+        // Sincronizar no localStorage para fallback
+        localStorage.setItem('operatingHours', JSON.stringify(normalized));
       }
       
     } catch (error: any) {
@@ -809,8 +824,22 @@ Deseja continuar?`);
       );
       setOperatingHours(updatedHours);
       
-      // Salvar no localStorage para persistência
-      localStorage.setItem('operatingHours', JSON.stringify(updatedHours));
+      // Persistir no banco (upsert por day_of_week)
+      const { error } = await (supabase as any)
+        .from('operating_hours')
+        .upsert({
+          day_of_week: dayOfWeek,
+          is_open: isOpen,
+          open_time: isOpen ? (openTime || null) : null,
+          close_time: isOpen ? (closeTime || null) : null,
+        }, { onConflict: 'day_of_week' });
+
+      if (error) {
+        console.error('❌ Erro ao salvar no banco, mantendo apenas local:', error);
+      } else {
+        // Sincronizar no localStorage para fallback
+        localStorage.setItem('operatingHours', JSON.stringify(updatedHours));
+      }
       
       // 🔔 AVISO sobre consultas existentes (mas não as remove)
       if (affectedAppointments.length > 0) {
@@ -846,10 +875,31 @@ Deseja continuar?`);
 
   const loadDateBlocks = async () => {
     try {
-      // Sistema funcionando com localStorage local
-      console.log('📅 Carregando bloqueios...');
-      const savedBlocks = localStorage.getItem('dateBlocks');
-      setDateBlocks(savedBlocks ? JSON.parse(savedBlocks) : []);
+      console.log('📅 Carregando bloqueios do banco...');
+      const { data, error } = await (supabase as any)
+        .from('date_blocks')
+        .select('*')
+        .order('start_date', { ascending: true });
+
+      if (error) {
+        console.warn('⚠️ Falha ao carregar bloqueios do banco, usando fallback local:', error.message);
+        const savedBlocks = localStorage.getItem('dateBlocks');
+        setDateBlocks(savedBlocks ? JSON.parse(savedBlocks) : []);
+      } else {
+        const mapped = (data || []).map((b: any) => ({
+          id: b.id,
+          title: b.title,
+          description: b.description,
+          startDate: b.start_date,
+          endDate: b.end_date,
+          startTime: b.start_time ? String(b.start_time).slice(0,5) : '',
+          endTime: b.end_time ? String(b.end_time).slice(0,5) : '',
+          allDay: !b.start_time && !b.end_time,
+          blockType: b.block_type || 'custom',
+        }));
+        setDateBlocks(mapped);
+        localStorage.setItem('dateBlocks', JSON.stringify(mapped));
+      }
       
     } catch (error: any) {
       console.error('❌ Erro ao carregar bloqueios:', error);
@@ -903,18 +953,31 @@ Deseja continuar?`);
         });
       }
       
-      const newBlock = {
-        id: Date.now(),
-        ...blockData,
-        created_at: new Date().toISOString()
+      // Persistir no banco
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id || null;
+
+      const toInsert = {
+        title: blockData.title || 'Bloqueio',
+        description: blockData.description || null,
+        block_type: blockData.blockType || 'custom',
+        start_date: blockData.startDate,
+        end_date: blockData.endDate,
+        start_time: blockData.allDay ? null : (blockData.startTime || null),
+        end_time: blockData.allDay ? null : (blockData.endTime || null),
+        created_by: userId,
       };
-      
-      const currentBlocks = localStorage.getItem('dateBlocks');
-      const blocks = currentBlocks ? JSON.parse(currentBlocks) : [];
-      const updatedBlocks = [...blocks, newBlock];
-      
-      localStorage.setItem('dateBlocks', JSON.stringify(updatedBlocks));
-      setDateBlocks(updatedBlocks);
+
+      const { error: insertError } = await (supabase as any)
+        .from('date_blocks')
+        .insert([toInsert]);
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Recarregar do banco para garantir consistência
+      await loadDateBlocks();
       
       // 🔔 AVISO sobre consultas existentes (mas não as remove)
       if (conflictingAppointments.length > 0) {
@@ -954,12 +1017,15 @@ Deseja continuar?`);
       
       console.log('🗑️ Removendo bloqueio:', blockId);
       
-      // Remove from local state immediately (real-time update)
-      const updatedBlocks = dateBlocks.filter(block => block.id !== blockId);
-      setDateBlocks(updatedBlocks);
-      
-      // Update localStorage
-      localStorage.setItem('dateBlocks', JSON.stringify(updatedBlocks));
+      // Remover no banco
+      const { error } = await (supabase as any)
+        .from('date_blocks')
+        .delete()
+        .eq('id', blockId);
+
+      if (error) throw error;
+
+      await loadDateBlocks();
       
       toast({
         title: "✅ Bloqueio Removido",

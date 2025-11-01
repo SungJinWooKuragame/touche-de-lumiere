@@ -103,19 +103,25 @@ export default function Agendar() {
 
   const loadOperatingHours = async () => {
     try {
-      // Load from localStorage (same as Admin panel)
-      const saved = localStorage.getItem('operatingHours');
-      if (saved) {
-        setOperatingHours(JSON.parse(saved));
-      } else {
-        // Default operating hours if none saved
-        const defaultHours = Array.from({ length: 7 }, (_, i) => ({
-          day_of_week: i,
-          is_open: i >= 1 && i <= 5, // Monday to Friday
-          open_time: '08:00',
-          close_time: '18:00'
+      // Buscar do banco primeiro
+      const { data, error } = await (supabase as any)
+        .from('operating_hours')
+        .select('*')
+        .order('day_of_week');
+
+      if (error) {
+        console.warn('⚠️ Falha ao carregar horários do banco, usando fallback localStorage:', error.message);
+        const saved = localStorage.getItem('operatingHours');
+        if (saved) setOperatingHours(JSON.parse(saved));
+      } else if (data) {
+        const normalized = (data || []).map((h: any) => ({
+          day_of_week: h.day_of_week,
+          is_open: h.is_open,
+          open_time: h.open_time ? String(h.open_time).slice(0,5) : null,
+          close_time: h.close_time ? String(h.close_time).slice(0,5) : null,
         }));
-        setOperatingHours(defaultHours);
+        setOperatingHours(normalized);
+        localStorage.setItem('operatingHours', JSON.stringify(normalized));
       }
     } catch (error) {
       console.error('Erro ao carregar horários de funcionamento:', error);
@@ -124,17 +130,30 @@ export default function Agendar() {
 
   const loadDateBlocks = async () => {
     try {
-      // Load from localStorage (same as Admin panel)
-      const saved = localStorage.getItem('dateBlocks');
-      if (saved) {
-        const blocks = JSON.parse(saved);
-        // Filter only current and future blocks
-        const now = new Date();
-        const currentBlocks = blocks.filter((block: any) => {
-          const blockEnd = new Date(block.endDate);
-          return blockEnd >= now;
-        });
-        setDateBlocks(currentBlocks);
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      const { data, error } = await (supabase as any)
+        .from('date_blocks')
+        .select('*')
+        .gte('end_date', todayStr)
+        .order('start_date', { ascending: true });
+
+      if (error) {
+        console.warn('⚠️ Falha ao carregar bloqueios do banco, usando fallback localStorage:', error.message);
+        const saved = localStorage.getItem('dateBlocks');
+        if (saved) setDateBlocks(JSON.parse(saved));
+      } else if (data) {
+        const mapped = (data || []).map((b: any) => ({
+          id: b.id,
+          title: b.title,
+          description: b.description,
+          startDate: b.start_date,
+          endDate: b.end_date,
+          startTime: b.start_time ? String(b.start_time).slice(0,5) : '',
+          endTime: b.end_time ? String(b.end_time).slice(0,5) : '',
+          allDay: !b.start_time && !b.end_time,
+        }));
+        setDateBlocks(mapped);
+        localStorage.setItem('dateBlocks', JSON.stringify(mapped));
       }
     } catch (error) {
       console.error('Erro ao carregar bloqueios de data:', error);
