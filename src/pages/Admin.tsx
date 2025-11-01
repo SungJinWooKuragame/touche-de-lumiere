@@ -1032,13 +1032,23 @@ Deseja continuar?`);
       .select(`
         *,
         services (name, price, duration_minutes),
-        profiles:client_id (full_name, email, phone)
+        profiles:client_id (id, user_id, full_name, email, phone)
       `)
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
 
     if (!error && data) {
       console.log('📊 Agendamentos carregados:', data);
+      
+      // 🔍 DEBUG: Verificar se telefones estão vindo
+      data.forEach(apt => {
+        if (apt.profiles) {
+          console.log(`👤 Cliente: ${apt.profiles.full_name}`);
+          console.log(`📧 Email: ${apt.profiles.email}`);
+          console.log(`📱 Telefone: ${apt.profiles.phone || '❌ SEM TELEFONE'}`);
+        }
+      });
+      
       setAppointments(data || []);
     } else if (error) {
       console.error('❌ Erro ao carregar agendamentos:', error);

@@ -222,9 +222,8 @@ export default function Index() {
                     isVisible['servicos'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
                   }`}
                   style={{ 
-                    transitionDelay: `${index * 100}ms`,
-                    '--hover-color': hoverColor
-                  } as React.CSSProperties}
+                    transitionDelay: `${index * 100}ms`
+                  }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = hoverColor;
                     e.currentTarget.style.boxShadow = `0 10px 40px ${hoverColor}33`;
@@ -251,11 +250,9 @@ export default function Index() {
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">{duration}</span>
                       <span 
-                        className="text-2xl font-bold bg-clip-text text-transparent"
+                        className="text-2xl font-bold"
                         style={{
-                          background: `linear-gradient(135deg, ${hoverColor}, ${hoverColor}aa)`,
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent'
+                          color: hoverColor
                         }}
                       >
                         {price}
