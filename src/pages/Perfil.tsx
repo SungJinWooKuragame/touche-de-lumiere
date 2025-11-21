@@ -47,12 +47,13 @@ export default function Perfil() {
     setUser(session.user);
 
     // Check if user is owner
-    const { data: roles } = await supabase
+    const { data: roles, error: rolesError } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", session.user.id);
 
-    if (roles?.some(r => r.role === "owner")) {
+    // Se não houver erro e for owner, redirecionar para admin
+    if (!rolesError && roles?.some(r => r.role === "owner")) {
       setIsOwner(true);
       navigate("/admin");
       return;

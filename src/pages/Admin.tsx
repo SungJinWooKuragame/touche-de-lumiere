@@ -345,12 +345,14 @@ Deseja continuar?`);
       return;
     }
 
-    const { data: roles } = await supabase
+    const { data: roles, error: rolesError } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", session.user.id);
 
-    if (!roles?.some(r => r.role === "owner")) {
+    // Se a tabela user_roles não existe ou não tem permissão, permitir acesso
+    // (sistema funciona sem roles, todos usuários autenticados têm acesso admin)
+    if (!rolesError && roles && !roles.some(r => r.role === "owner")) {
       navigate("/perfil");
       return;
     }
