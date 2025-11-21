@@ -176,9 +176,21 @@ export default function Agendar() {
       time,
       slotStart: `${Math.floor(slotStart/60)}:${String(slotStart%60).padStart(2,'0')}`,
       slotEnd: `${Math.floor(slotEnd/60)}:${String(slotEnd%60).padStart(2,'0')}`,
-      date: selectedDate.toISOString().split('T')[0]
+      date: selectedDate.toISOString().split('T')[0],
+      totalBlocks: dateBlocks.length
     };
     console.log('🔍 Verificando slot:', debugInfo);
+    
+    // 🐛 DEBUG: Mostrar todos os bloqueios carregados
+    if (dateBlocks.length > 0) {
+      console.log('📋 Bloqueios carregados:', dateBlocks.map(b => ({
+        title: b.title,
+        startDate: b.startDate,
+        endDate: b.endDate,
+        startTime: b.startTime,
+        endTime: b.endTime
+      })));
+    }
 
     // 🕐 VERIFICAR SE É HOJE E SE O HORÁRIO JÁ PASSOU
     const today = new Date();
@@ -244,6 +256,18 @@ export default function Agendar() {
       
       const selectedDateNormalized = new Date(selectedDate);
       selectedDateNormalized.setHours(0, 0, 0, 0);
+      
+      // 🐛 DEBUG: Log da comparação de datas
+      console.log('📅 Comparação de datas:', {
+        blockTitle: block.title,
+        blockStart: blockStartDate.toISOString().split('T')[0],
+        blockEnd: blockEndDate.toISOString().split('T')[0],
+        selectedDate: selectedDateNormalized.toISOString().split('T')[0],
+        blockStartTimestamp: blockStartDate.getTime(),
+        blockEndTimestamp: blockEndDate.getTime(),
+        selectedTimestamp: selectedDateNormalized.getTime(),
+        isInRange: selectedDateNormalized >= blockStartDate && selectedDateNormalized <= blockEndDate
+      });
       
       // Verificar se a data selecionada está dentro do período de bloqueio (inclusive)
       const dateInRange = selectedDateNormalized >= blockStartDate && selectedDateNormalized <= blockEndDate;
