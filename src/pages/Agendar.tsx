@@ -278,34 +278,62 @@ export default function Agendar() {
       
       // Se chegou aqui, a data está no período do bloqueio
       
+      // 🎯 DETERMINAR TIPO DE BLOQUEIO BASEADO NA POSIÇÃO DO DIA NO PERÍODO
+      const isFirstDay = selectedDateNormalized.getTime() === blockStartDate.getTime();
+      const isLastDay = selectedDateNormalized.getTime() === blockEndDate.getTime();
+      const isMiddleDay = !isFirstDay && !isLastDay;
+      const isSingleDay = blockStartDate.getTime() === blockEndDate.getTime();
+      
       // Se é bloqueio de dia inteiro (sem horários específicos)
       if (block.allDay || (!block.startTime && !block.endTime)) {
         return true; // Bloquear o dia inteiro
       }
       
-      // Se é bloqueio de horário específico, verificar sobreposição de horários
+      // Se é bloqueio de horário específico
       if (block.startTime && block.endTime) {
         const [blockStartHours, blockStartMinutes] = block.startTime.split(":").map(Number);
         const [blockEndHours, blockEndMinutes] = block.endTime.split(":").map(Number);
         const blockStartTime = blockStartHours * 60 + blockStartMinutes;
         const blockEndTime = blockEndHours * 60 + blockEndMinutes;
         
+        let effectiveStartTime: number;
+        let effectiveEndTime: number;
+        
+        // 📅 REGRA: Determinar horários efetivos baseado na posição do dia
+        if (isSingleDay) {
+          // Bloqueio de dia único: aplicar horários exatos
+          effectiveStartTime = blockStartTime;
+          effectiveEndTime = blockEndTime;
+        } else if (isFirstDay) {
+          // PRIMEIRO DIA: bloquear do horário inicial até o fim do dia (23:59)
+          effectiveStartTime = blockStartTime;
+          effectiveEndTime = 24 * 60; // 23:59 (1440 minutos)
+        } else if (isLastDay) {
+          // ÚLTIMO DIA: bloquear do início do dia (00:00) até o horário final
+          effectiveStartTime = 0; // 00:00
+          effectiveEndTime = blockEndTime;
+        } else {
+          // DIAS INTERMEDIÁRIOS: bloquear o dia inteiro (00:00 às 23:59)
+          effectiveStartTime = 0; // 00:00
+          effectiveEndTime = 24 * 60; // 23:59 (1440 minutos)
+        }
+        
         // Verificar sobreposição: slot sobrepõe se:
-        // - slot inicia antes do bloqueio terminar E
-        // - slot termina depois do bloqueio iniciar
-        const overlaps = slotStart < blockEndTime && slotEnd > blockStartTime;
+        // - slot inicia antes do bloqueio efetivo terminar E
+        // - slot termina depois do bloqueio efetivo iniciar
+        const overlaps = slotStart < effectiveEndTime && slotEnd > effectiveStartTime;
         
         // 🐛 DEBUG: Log detalhado do bloqueio
         console.log('🚫 Verificando bloqueio parcial:', {
           blockTitle: block.title,
           blockDate: `${block.startDate} - ${block.endDate}`,
           blockTime: `${block.startTime} - ${block.endTime}`,
-          blockStartMinutes: blockStartTime,
-          blockEndMinutes: blockEndTime,
-          slotStartMinutes: slotStart,
-          slotEndMinutes: slotEnd,
+          dayPosition: isSingleDay ? '🔵 Dia Único' : isFirstDay ? '🟢 Primeiro Dia' : isLastDay ? '🔴 Último Dia' : '🟡 Dia Intermediário',
+          originalBlockTime: `${blockStartTime} a ${blockEndTime}`,
+          effectiveBlockTime: `${effectiveStartTime} a ${effectiveEndTime}`,
+          slotTime: `${slotStart} a ${slotEnd}`,
           overlaps,
-          calculation: `slot(${slotStart} a ${slotEnd}) vs block(${blockStartTime} a ${blockEndTime})`
+          calculation: `slot(${slotStart} a ${slotEnd}) vs block efetivo(${effectiveStartTime} a ${effectiveEndTime})`
         });
         
         return overlaps;
