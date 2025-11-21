@@ -171,6 +171,15 @@ export default function Agendar() {
     const slotStart = hours * 60 + minutes;
     const slotEnd = slotStart + durationMinutes;
 
+    // 🐛 DEBUG: Log do slot sendo verificado
+    const debugInfo = {
+      time,
+      slotStart: `${Math.floor(slotStart/60)}:${String(slotStart%60).padStart(2,'0')}`,
+      slotEnd: `${Math.floor(slotEnd/60)}:${String(slotEnd%60).padStart(2,'0')}`,
+      date: selectedDate.toISOString().split('T')[0]
+    };
+    console.log('🔍 Verificando slot:', debugInfo);
+
     // 🕐 VERIFICAR SE É HOJE E SE O HORÁRIO JÁ PASSOU
     const today = new Date();
     const isToday = selectedDate.toDateString() === today.toDateString();
@@ -225,29 +234,57 @@ export default function Agendar() {
 
     // 🚫 PRIORIDADE 3: BLOQUEIOS DE DATA/HORA (MENOR PRIORIDADE)
     // Só afeta NOVOS agendamentos (consultas existentes são mantidas)
-    const selectedDateStr = selectedDate.toISOString().split('T')[0];
-    
     const isBlocked = dateBlocks.some((block) => {
-      const blockStart = new Date(block.startDate);
-      const blockEnd = new Date(block.endDate);
-      const selectedDateObj = new Date(selectedDateStr);
+      // Normalizar todas as datas para meia-noite (00:00:00) para comparação precisa de dias
+      const blockStartDate = new Date(block.startDate);
+      blockStartDate.setHours(0, 0, 0, 0);
       
-      // Verificar se a data selecionada está dentro do período de bloqueio
-      if (selectedDateObj >= blockStart && selectedDateObj <= blockEnd) {
-        // Se é bloqueio de dia inteiro
-        if (block.allDay) {
-          return true;
-        }
+      const blockEndDate = new Date(block.endDate);
+      blockEndDate.setHours(0, 0, 0, 0);
+      
+      const selectedDateNormalized = new Date(selectedDate);
+      selectedDateNormalized.setHours(0, 0, 0, 0);
+      
+      // Verificar se a data selecionada está dentro do período de bloqueio (inclusive)
+      const dateInRange = selectedDateNormalized >= blockStartDate && selectedDateNormalized <= blockEndDate;
+      
+      if (!dateInRange) {
+        return false; // Data fora do período de bloqueio
+      }
+      
+      // Se chegou aqui, a data está no período do bloqueio
+      
+      // Se é bloqueio de dia inteiro (sem horários específicos)
+      if (block.allDay || (!block.startTime && !block.endTime)) {
+        return true; // Bloquear o dia inteiro
+      }
+      
+      // Se é bloqueio de horário específico, verificar sobreposição de horários
+      if (block.startTime && block.endTime) {
+        const [blockStartHours, blockStartMinutes] = block.startTime.split(":").map(Number);
+        const [blockEndHours, blockEndMinutes] = block.endTime.split(":").map(Number);
+        const blockStartTime = blockStartHours * 60 + blockStartMinutes;
+        const blockEndTime = blockEndHours * 60 + blockEndMinutes;
         
-        // Se é bloqueio de horário específico, verificar sobreposição
-        if (block.startTime && block.endTime) {
-          const [blockStartHours, blockStartMinutes] = block.startTime.split(":").map(Number);
-          const [blockEndHours, blockEndMinutes] = block.endTime.split(":").map(Number);
-          const blockStartTime = blockStartHours * 60 + blockStartMinutes;
-          const blockEndTime = blockEndHours * 60 + blockEndMinutes;
-          
-          return slotStart < blockEndTime && slotEnd > blockStartTime;
-        }
+        // Verificar sobreposição: slot sobrepõe se:
+        // - slot inicia antes do bloqueio terminar E
+        // - slot termina depois do bloqueio iniciar
+        const overlaps = slotStart < blockEndTime && slotEnd > blockStartTime;
+        
+        // 🐛 DEBUG: Log detalhado do bloqueio
+        console.log('🚫 Verificando bloqueio parcial:', {
+          blockTitle: block.title,
+          blockDate: `${block.startDate} - ${block.endDate}`,
+          blockTime: `${block.startTime} - ${block.endTime}`,
+          blockStartMinutes: blockStartTime,
+          blockEndMinutes: blockEndTime,
+          slotStartMinutes: slotStart,
+          slotEndMinutes: slotEnd,
+          overlaps,
+          calculation: `slot(${slotStart} a ${slotEnd}) vs block(${blockStartTime} a ${blockEndTime})`
+        });
+        
+        return overlaps;
       }
       
       return false;
